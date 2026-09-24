@@ -20,4 +20,6 @@ app.get('/api/health',(req,res)=>{
         environment: process.env.NODE_ENV || 'development',
         database:mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
     });
+
+    
 });
