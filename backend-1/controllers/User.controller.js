@@ -1,27 +1,46 @@
 const userModel = require('../models/User.model');
 
-export const getAllUsers = (req, res) => {
-  // Logic to retrieve all users from the database
-  res.json({ message: 'Get all users' });
-}
+const getAllUsers = (req, res) => {
+    res.json({
+        message: 'Get all users'
+    });
+};
 
-export const createUser = (req, res) => {
-    // Logic to create a new user in the database  
-    res.json({ message: 'Create a new user' });
-}
-export const getUserById = (req, res) => {
-    const { id } = req.params;  
-    // Logic to retrieve a user by ID from the database
-    res.json({ message: `Get user with ID: ${id}` });
-}
-export const updateUserById = (req, res) => {
-    const { id } = req.params;  
-    // Logic to update a user by ID in the database
-    res.json({ message: `Update user with ID: ${id}` });
-}
+const createUser = (req, res) => {
+    res.json({
+        message: 'Create a new user'
+    });
+    
+};
 
-export const deleteUserById = (req, res) => {
-    const { id } = req.params;  
-    // Logic to delete a user by ID from the database
-    res.json({ message: `Delete user with ID: ${id}` });
-}
+const getUserById = (req, res) => {
+    const { id } = req.params;
+
+    res.json({
+        message: `Get user with ID: ${id}`
+    });
+};
+
+const updateUserById = (req, res) => {
+    const { id } = req.params;
+
+    res.json({
+        message: `Update user with ID: ${id}`
+    });
+};
+
+const deleteUserById = (req, res) => {
+    const { id } = req.params;
+
+    res.json({
+        message: `Delete user with ID: ${id}`
+    });
+};
+
+module.exports = {
+    getAllUsers,
+    createUser,
+    getUserById,
+    updateUserById,
+    deleteUserById
+};
