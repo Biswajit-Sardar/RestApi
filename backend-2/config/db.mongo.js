@@ -24,3 +24,21 @@ const connectDB = async () => {
     }
 
 };
+
+
+const ensureDatabasa = (res)=> {
+    if (mongoose.connection.readyState !== 1) {
+        res.status(503).json({
+            success: false,
+            error: 'Database is not configured or unavailable. Add a valid MONGODB_URI to enable data operations.',
+        });
+        return false;
+    }
+    return true;
+};
+module.exports = {
+    connectDB,
+    ensureDatabasa,
+    isMongoConfigured,
+};
+
