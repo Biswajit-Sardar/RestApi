@@ -30,8 +30,13 @@ app.use(cors({
             callback(null, true);
             return;
         }
-    }
-}));
+        callback(new Error('Not allowed by CORS'));
+    },
+
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    credentials: true,
+})
+);
     
 const PORT = process.env.PORT || 5000;
 
