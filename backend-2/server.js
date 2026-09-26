@@ -23,7 +23,16 @@ const allowedOrigins = [
 ].filter(Boolean);
 
 app.use(helmet());
-
+app.use(morgan('combined'));
+app.use(cors({
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+            return;
+        }
+    }
+}));
+    
 const PORT = process.env.PORT || 5000;
 
 // Connect to the database
