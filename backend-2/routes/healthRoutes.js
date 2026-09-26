@@ -5,7 +5,7 @@ const router = express.Router();
 const healthController = require('../controllers/healthController');
 
 router.get('/health', healthController.getHealth);
-router.get('/version', healthController.getAppVersion);
+router.get('/version', healthController.getVersion);
 
 module.exports = router;
 
