@@ -22,22 +22,19 @@ const allowedOrigins = [
     'http://127.0.0.1:4200',
 ].filter(Boolean);
 
-app.use(helmet());
-app.use(morgan('combined'));
-app.use(cors({
-    origin: function (origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-            return;
-        }
-        callback(new Error('Not allowed by CORS'));
-    },
 
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    credentials: true,
-})
-);
-    
+app.use(helmet());
+app.use(morgan("combined"));
+app.use(
+    cors({
+        origin: (origin, callback) => {
+            if(!origin || allowedOrigins.includes(origin)) {
+                callback(null, true);
+                return;
+            }
+        }
+    })
+)
 const PORT = process.env.PORT || 5000;
 
 // Connect to the database
@@ -49,7 +46,8 @@ app.use('/api/products', productRoutes);
 app.use('/api/health', healthRoutes);
 
 app.use(errorHandler);
-app.use(rateLimit);
+app.use(rateLimit(200, 60 * 60 * 1000)); // 200 requests per hour.0
+
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on port ${PORT}`);
