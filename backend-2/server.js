@@ -1,20 +1,42 @@
 const express = require('express');
-const {connectDB}= require('./config/db.mongo');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+require('dotenv').config();
+const { connectDB } = require('./config/db.mongo');
 
-const healthRoutes = require('./routes/healthRoutes');
+const errorHandler = require('./middlewares/errorHandler');
+const rateLimit = require('./middlewares/rateLimiter');
+
 const userRoutes = require('./routes/userRoutes');
 const productRoutes = require('./routes/productRoutes');
+const healthRoutes = require('./routes/healthRoutes');
+
 
 const app = express();
+const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:4200',
+    'http://127.0.0.1:4200',
+].filter(Boolean);
 
-app.use('/api', healthRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/products', productRoutes);
+app.use(helmet());
 
 const PORT = process.env.PORT || 5000;
 
+// Connect to the database
 connectDB();
 
-app.listen(PORT ,'0.0.0.0', () => {
-    console.log(`Server is running on port http://localhost:${PORT}`);
+// Use the routes
+app.use('/api/users', userRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/health', healthRoutes);
+
+app.use(errorHandler);
+app.use(rateLimit);
+
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server is running on port ${PORT}`);
 });

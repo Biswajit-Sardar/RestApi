@@ -174,7 +174,6 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
-
 // Export all controllers
 module.exports = {
   getAllUsers,
