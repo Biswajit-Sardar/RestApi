@@ -3,9 +3,9 @@ require('dotenv').config();
 
 const isMongoConfigured = () => {
     return(
-        typeof process.env.MONGO_URI !== 'undefined' &&
-        process.env.MONGO_URI !== null &&
-        process.env.MONGO_URI !== ''
+        typeof process.env.MONGODB_URI !== 'undefined' &&
+        process.env.MONGODB_URI !== null &&
+        process.env.MONGODB_URI !== ''
     );
 };
 
@@ -17,7 +17,7 @@ const connectDB = async () => {
     }
 
     try {
-        await mongoose.connect(process.env.MONGO_URI);
+        await mongoose.connect(process.env.MONGODB_URI);
         console.log('Success: MongoDB connected successfully');
     } catch (error) {
         console.error('Error: Failed to connect to MongoDB.', error);
@@ -26,7 +26,7 @@ const connectDB = async () => {
 };
 
 
-const ensureDatabasa = (res)=> {
+const ensureDatabase = (res)=> {
     if (mongoose.connection.readyState !== 1) {
         res.status(503).json({
             success: false,
@@ -38,7 +38,7 @@ const ensureDatabasa = (res)=> {
 };
 module.exports = {
     connectDB,
-    ensureDatabasa,
+    ensureDatabase,
     isMongoConfigured,
 };
 

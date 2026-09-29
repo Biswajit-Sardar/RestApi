@@ -9,27 +9,27 @@ const userController = require('../controllers/userController.js');
 
 // GET all users
 // GET /api/users
-router.get('/users', userController.getAllUsers);
+router.get('/', userController.getAllUsers);
 
 
 // Create new user
 // POST /api/users
-router.post('/users', userController.createUser);
+router.post('/', userController.createUser);
 
 
 // Get user by ID
 // GET /api/users/:id
-router.get('/users/:id', userController.getUserById);
+router.get('/:id', userController.getUserById);
 
 
 // Update user
 // PUT /api/users/:id
-router.put('/users/:id', userController.updateUser);
+router.put('/:id', userController.updateUser);
 
 
 // Delete user
 // DELETE /api/users/:id
-router.delete('/users/:id', userController.deleteUser);
+router.delete('/:id', userController.deleteUser);
 
 
 module.exports = router;
