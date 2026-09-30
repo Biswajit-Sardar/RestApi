@@ -1,8 +1,5 @@
+// utils/appVersion.js
+const APP_VERSION = '2.0.0';
+const DEPLOYED_AT = new Date().toISOString();
 
-const APP_VERSION = "2.0.0";
-const DEPLOYD_AT = new Date().toISOString();
-
-module.exports = {
-    APP_VERSION,
-    DEPLOYD_AT
-};
+module.exports = { APP_VERSION, DEPLOYED_AT };

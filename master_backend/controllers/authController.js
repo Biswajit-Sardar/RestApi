@@ -1,60 +1,36 @@
-// controllers/productController.js
-const Product = require('../models/productModel');
+// controllers/authController.js
+const User = require('../models/userModel');
+const { generateToken } = require('../utils/jwt');
 const { ensureDatabase } = require('../config/db.mongo');
 
-// GET /api/products
-const getAllProducts = async (req, res, next) => {
+// POST /api/auth/register
+const register = async (req, res, next) => {
   if (!ensureDatabase(res)) return;
   try {
-    const {
-      page = 1,
-      limit = 10,
-      category,
-      inStock,
-      minPrice,
-      maxPrice,
-      search,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
-    } = req.query;
-
-    const filter = {};
-    if (category) filter.category = category;
-    if (inStock !== undefined) filter.inStock = inStock === 'true';
-
-    if (minPrice || maxPrice) {
-      filter.price = {};
-      if (minPrice) filter.price.$gte = parseFloat(minPrice);
-      if (maxPrice) filter.price.$lte = parseFloat(maxPrice);
+    const { name, email, password, role } = req.body;
+    const existingUser = await User.findOne({ email: email ? email.toLowerCase().trim() : '' });
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        error: 'An account with this email address already exists',
+      });
     }
 
-    if (search) {
-      filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-      ];
-    }
+    const userRole = role && ['user', 'moderator', 'admin'].includes(role) ? role : 'user';
+    const user = await User.create({ name, email, password, role: userRole });
+    const token = generateToken(user._id, user.role);
 
-    const pageNum = Math.max(1, parseInt(page, 10) || 1);
-    const limitNum = Math.max(1, Math.min(100, parseInt(limit, 10) || 10));
-    const sort = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
-
-    const products = await Product.find(filter)
-      .populate('createdBy', 'name email role')
-      .sort(sort)
-      .skip((pageNum - 1) * limitNum)
-      .limit(limitNum);
-
-    const total = await Product.countDocuments(filter);
-
-    res.json({
+    res.status(201).json({
       success: true,
-      data: products,
-      pagination: {
-        currentPage: pageNum,
-        totalPages: Math.ceil(total / limitNum),
-        totalRecords: total,
-        limit: limitNum,
+      message: 'User registered successfully',
+      token,
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isActive: user.isActive,
+        createdAt: user.createdAt,
       },
     });
   } catch (error) {
@@ -62,67 +38,96 @@ const getAllProducts = async (req, res, next) => {
   }
 };
 
-// POST /api/products
-const createProduct = async (req, res, next) => {
+// POST /api/auth/login
+const login = async (req, res, next) => {
   if (!ensureDatabase(res)) return;
   try {
-    const { name, description, price, category, inStock, quantity } = req.body;
-    const product = new Product({
-      name,
-      description,
-      price,
-      category,
-      inStock: inStock !== undefined ? inStock : true,
-      quantity: quantity !== undefined ? quantity : 0,
-      createdBy: req.user ? req.user._id : undefined,
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: 'Please provide email and password' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() }).select('+password');
+    if (!user || !(await user.matchPassword(password))) {
+      return res.status(401).json({ success: false, error: 'Invalid email or password credentials' });
+    }
+
+    if (!user.isActive) {
+      return res.status(403).json({ success: false, error: 'Account is deactivated. Please contact support.' });
+    }
+
+    const token = generateToken(user._id, user.role);
+    res.json({
+      success: true,
+      message: 'Login successful',
+      token,
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isActive: user.isActive,
+        createdAt: user.createdAt,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// GET /api/auth/me
+const getMe = async (req, res, next) => {
+  res.json({ success: true, data: req.user });
+};
+
+// PUT /api/auth/updatedetails
+const updateDetails = async (req, res, next) => {
+  if (!ensureDatabase(res)) return;
+  try {
+    const fieldsToUpdate = {};
+    if (req.body.name) fieldsToUpdate.name = req.body.name;
+    if (req.body.email) fieldsToUpdate.email = req.body.email;
+
+    if (fieldsToUpdate.email && fieldsToUpdate.email.toLowerCase() !== req.user.email) {
+      const emailExists = await User.findOne({ email: fieldsToUpdate.email.toLowerCase() });
+      if (emailExists) {
+        return res.status(409).json({ success: false, error: 'Email is already in use by another account' });
+      }
+    }
+
+    const user = await User.findByIdAndUpdate(req.user.id, fieldsToUpdate, {
+      returnDocument: 'after',
+      runValidators: true,
     });
 
-    await product.save();
-    res.status(201).json({ success: true, message: 'Product created successfully', data: product });
+    res.json({ success: true, message: 'Profile updated successfully', data: user });
   } catch (error) {
     next(error);
   }
 };
 
-// GET /api/products/:id
-const getProductById = async (req, res, next) => {
+// PUT /api/auth/updatepassword
+const updatePassword = async (req, res, next) => {
   if (!ensureDatabase(res)) return;
   try {
-    const product = await Product.findById(req.params.id).populate('createdBy', 'name email role');
-    if (!product) return res.status(404).json({ success: false, error: 'Product not found' });
-    res.json({ success: true, data: product });
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ success: false, error: 'Please provide both current and new password' });
+    }
+
+    const user = await User.findById(req.user.id).select('+password');
+    if (!(await user.matchPassword(currentPassword))) {
+      return res.status(401).json({ success: false, error: 'Current password is incorrect' });
+    }
+
+    user.password = newPassword;
+    await user.save();
+    const token = generateToken(user._id, user.role);
+
+    res.json({ success: true, message: 'Password updated successfully', token });
   } catch (error) {
     next(error);
   }
 };
 
-// PUT /api/products/:id
-const updateProduct = async (req, res, next) => {
-  if (!ensureDatabase(res)) return;
-  try {
-    const product = await Product.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { returnDocument: 'after', runValidators: true }
-    ).populate('createdBy', 'name email role');
-
-    if (!product) return res.status(404).json({ success: false, error: 'Product not found' });
-    res.json({ success: true, message: 'Product updated successfully', data: product });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// DELETE /api/products/:id
-const deleteProduct = async (req, res, next) => {
-  if (!ensureDatabase(res)) return;
-  try {
-    const product = await Product.findByIdAndDelete(req.params.id);
-    if (!product) return res.status(404).json({ success: false, error: 'Product not found' });
-    res.json({ success: true, message: 'Product deleted successfully' });
-  } catch (error) {
-    next(error);
-  }
-};
-
-module.exports = { getAllProducts, createProduct, getProductById, updateProduct, deleteProduct };
+module.exports = { register, login, getMe, updateDetails, updatePassword };
