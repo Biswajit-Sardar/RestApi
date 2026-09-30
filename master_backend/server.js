@@ -98,3 +98,19 @@ if(require.main === module) {
     console.log(`Server running in ${process.env.NODE_ENV||'development'} mode on port ${port}`);
   });
 }
+
+
+
+//Handle Uncaught Promise Rejections
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Rejection:${err.message}');
+});
+
+//Handle Uncaught Exceptions
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:${err.message}');
+  process.exit(1);
+});
+
+module.exports = app;
