@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const { error } = require('winston');
 require('dotenv').config();
 
 const app = express();
@@ -76,3 +77,24 @@ app.get('/', (req, res) => {
     },
   });
 });
+
+
+
+// 404 Handler for undefined routes
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: `Error ${req.method} ${req.originalUrl} not found`,
+  });
+});
+
+
+let server;
+
+const port = process.env.PORT || 5000;
+
+if(require.main === module) {
+  server = app.listen(port,'0.0.0.0', () => {
+    console.log(`Server running in ${process.env.NODE_ENV||'development'} mode on port ${port}`);
+  });
+}
