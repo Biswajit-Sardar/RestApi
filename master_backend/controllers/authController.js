@@ -6,6 +6,7 @@ const { ensureDatabase } = require('../config/db.mongo');
 // POST /api/auth/register
 const register = async (req, res, next) => {
   if (!ensureDatabase(res)) return;
+  
   try {
     const { name, email, password, role } = req.body;
     const existingUser = await User.findOne({ email: email ? email.toLowerCase().trim() : '' });
